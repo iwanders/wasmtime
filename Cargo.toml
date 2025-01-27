@@ -144,6 +144,7 @@ members = [
   "cranelift/isle/veri/veri_engine",
   "cranelift/isle/veri/veri_ir",
   "cranelift/serde",
+  "cranelift/compile_average_ir",
   "crates/bench-api",
   "crates/c-api/artifact",
   "crates/environ/fuzz",
@@ -274,6 +275,8 @@ cranelift-bforest = { path = "cranelift/bforest", version = "0.117.0" }
 cranelift-bitset = { path = "cranelift/bitset", version = "0.117.0" }
 cranelift-control = { path = "cranelift/control", version = "0.117.0" }
 cranelift = { path = "cranelift/umbrella", version = "0.117.0" }
+
+
 
 winch-codegen = { path = "winch/codegen", version = "=30.0.0" }
 

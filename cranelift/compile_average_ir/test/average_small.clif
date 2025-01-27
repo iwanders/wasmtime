@@ -1,0 +1,16 @@
+; from https://github.com/bytecodealliance/wasmtime/blob/5dfccc078bb3dcad152d37013dde8067f197e6e7/cranelift/docs/ir.md#overall-structure
+function %average(i32, i32) -> f32 system_v {
+    ss0 = explicit_slot 8         ; Stack slot for `sum`
+
+block1(v0: i32, v1: i32):
+    v20 = f64const 0x0.0         ; Create a f64 as 0.0
+    stack_store v20, ss0         ; Store f64 into the ss0 stack slot.
+    v6 = iadd v0, v1             ; Adds the input together as integers, output is i32?
+    v7 = load.f32 v6             ; Converts v7 to f32 from i32.
+    v8 = fpromote.f64 v7         ; converts v7 to f64 into v8.
+    v9 = stack_load.f64 ss0      ; Loads ss0 from the stack into v9, v9 is now f64 that's 0.0
+    v10 = fadd.f64 v8, v9        ; Adds v8 and v9 together, both are f64's, so v10 is an f64.
+    stack_store v10, ss0         ; Write the 8 bytes back to ss0.
+    v100 = f32const +NaN         ; Just creating a dummy to return.
+    return v100                  ; Return the dummy.
+}

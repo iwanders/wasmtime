@@ -1,0 +1,15 @@
+[package]
+name = "compile_average_ir"
+version = "0.1.0"
+
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+cranelift-codegen = {workspace=true, features=["x86", "arm64"]}
+target-lexicon = { workspace = true }
+cranelift-reader = { workspace = true }
+cranelift-jit = { workspace = true }
+cranelift-module = { workspace = true }
+cranelift-native = { workspace = true }
+cranelift-object = { workspace = true }
