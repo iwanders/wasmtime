@@ -21,6 +21,16 @@ pub enum IsaSpec {
     /// Each `isa` command is used to configure a `TargetIsa` trait object.
     Some(Vec<OwnedTargetIsa>),
 }
+impl std::fmt::Debug for IsaSpec {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match &self {
+            IsaSpec::None(f) => write!(fmt, "None({})", f),
+            IsaSpec::Some(v) => {
+                fmt.debug_list().entries(v.iter().map(|isa| format!("{}", isa.triple()))).finish()
+            }
+        }
+    }
+}
 
 impl IsaSpec {
     /// If the `IsaSpec` contains exactly 1 `TargetIsa` we return a reference to it
@@ -35,6 +45,7 @@ impl IsaSpec {
 }
 
 /// An error type returned by `parse_options`.
+#[derive(Debug)]
 pub enum ParseOptionError {
     /// A generic ParseError.
     Generic(ParseError),

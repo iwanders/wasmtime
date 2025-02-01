@@ -15,6 +15,7 @@ use cranelift_codegen::ir::Function;
 ///
 /// This is the result of parsing a `.clif` file which contains a number of test commands and ISA
 /// specs followed by the functions that should be tested.
+#[derive(Debug)]
 pub struct TestFile<'a> {
     /// `test foo ...` lines.
     pub commands: Vec<TestCommand<'a>>,
