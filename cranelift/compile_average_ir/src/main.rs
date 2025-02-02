@@ -3,31 +3,7 @@
 type ResultError = Box<dyn std::error::Error + Send + Sync>;
 type ResultReturn = Result<(), ResultError>;
 
-fn attempt_one() -> ResultReturn {
-    // This was my first attempt, it results in
-    // Error: Unsupported("should be implemented in ISLE: inst = `v13 = stack_load.f64 ss0`, type = `Some(types::F64)`")
-    use cranelift_codegen::isa;
-    use cranelift_codegen::settings;
-    use target_lexicon::triple;
-    let shared_builder = settings::builder();
-    let shared_flags = settings::Flags::new(shared_builder);
 
-    let isa = isa::lookup(triple!("x86_64")).map(|v| v.finish(shared_flags))??;
-
-    let f = std::fs::read_to_string("./test/average.clif")?;
-
-    let fun = cranelift_reader::parse_functions(&f)?;
-    let fun = fun.first().unwrap();
-    println!("fun: {fun:?}");
-
-    let control_flow_graph = cranelift_codegen::flowgraph::ControlFlowGraph::with_function(fun);
-    let dominator_tree =
-        cranelift_codegen::dominator_tree::DominatorTree::with_function(fun, &control_flow_graph);
-    let mut control_plane = cranelift_codegen::control::ControlPlane::default();
-    let _output = isa.compile_function(fun, &dominator_tree, false, &mut control_plane)?;
-
-    Ok(())
-}
 fn attempt_two() -> ResultReturn {
     // use crate::frontend::*;
     // use cranelift::prelude::*;
@@ -80,11 +56,44 @@ fn attempt_two() -> ResultReturn {
     )?;
     let mut module = cranelift_object::ObjectModule::new(builder);
 
-    let f = std::fs::read_to_string("./test/average.clif").map_err(|e| format!("could not find file ./test/average.clif: {e:?}"))?;
+    // let f = std::fs::read_to_string("./test/average.clif").map_err(|e| format!("could not find file ./test/average.clif: {e:?}"))?;
     // let f = std::fs::read_to_string("./test/average_fixed.clif").map_err(|e| format!("could not find file ./test/average.clif: {e:?}"))?;
+    let f = std::fs::read_to_string("./test/average_small.clif").map_err(|e| format!("could not find file ./test/average.clif: {e:?}"))?;
 
     let mut fun = cranelift_reader::parse_functions(&f)?;
     let fun = fun.drain(..).next().unwrap();
+
+
+    let stencil = &fun.stencil;
+    let dfg = &stencil.dfg;
+    let layout = &stencil.layout;
+
+    // let mut buffer = vec![];
+
+    use cranelift_codegen::ir;
+    for b in layout.blocks() {
+        println!("b: {b:?}");
+        let block_data = &dfg.blocks[b];
+        println!(
+            "block_data params: {:?}",
+            block_data.params(&dfg.value_lists)
+        );
+        for inst in layout.block_insts(b) {
+            println!("inst: {inst:?}");
+            let instdata = dfg.insts[inst];
+            println!("  instruction_data: {instdata:?}");
+            println!("  typevar_operand: {:?}", instdata.typevar_operand(&dfg.value_lists));
+            println!("  opcode: {:?}", instdata.opcode());
+            let arguments = instdata.arguments(&dfg.value_lists);
+            let types_of = |v: &[ir::Value]| v.iter().map(|z| dfg.value_type(*z)).collect::<Vec<_>>();
+            println!("  args: {:?} types: {:?}", arguments, types_of(&arguments));
+            
+            println!("  results? {:?} -> {:?}  (types: {:?}) ",  dfg.has_results(inst), dfg.inst_results(inst), types_of(&dfg.inst_results(inst)));
+            // We also don't have the types here... do WE have to propagate thos
+        }
+    }
+
+    // panic!();
 
     // let mut ctx = module.make_context();
     let mut ctx = cranelift_codegen::Context::for_function(fun);
@@ -131,7 +140,6 @@ fn attempt_two() -> ResultReturn {
 
 fn main() -> ResultReturn {
     println!("Hello, world!");
-    // attempt_one()?;
     attempt_two()?;
     Ok(())
 }
