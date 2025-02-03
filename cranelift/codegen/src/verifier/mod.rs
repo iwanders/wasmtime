@@ -1135,11 +1135,13 @@ impl<'a> Verifier<'a> {
     fn typecheck(&self, inst: Inst, errors: &mut VerifierErrors) -> VerifierStepResult {
         let inst_data = &self.func.dfg.insts[inst];
         let constraints = inst_data.opcode().constraints();
+        println!("typecheck: {inst:?}   {inst_data:?}");
 
         let ctrl_type = if let Some(value_typeset) = constraints.ctrl_typeset() {
             // For polymorphic opcodes, determine the controlling type variable first.
             let ctrl_type = self.func.dfg.ctrl_typevar(inst);
-
+            println!("  ctrl: {ctrl_type:?}");
+            // println!("  constraints: {constraints:?}");
             if !value_typeset.contains(ctrl_type) {
                 errors.report((
                     inst,
@@ -1215,11 +1217,15 @@ impl<'a> Verifier<'a> {
         errors: &mut VerifierErrors,
     ) -> VerifierStepResult {
         let constraints = self.func.dfg.insts[inst].opcode().constraints();
+        println!("in typecheck_fixed_args");
 
         for (i, &arg) in self.func.dfg.inst_fixed_args(inst).iter().enumerate() {
             let arg_type = self.func.dfg.value_type(arg);
+            println!("   i: {i:?}, arg {arg:?}  arg_type {arg_type:?}");
             match constraints.value_argument_constraint(i, ctrl_type) {
                 ResolvedConstraint::Bound(expected_type) => {
+                    println!("   Bound expected_type: {expected_type:?}");
+                    println!("   Bound arg_type: {arg_type:?}");
                     if arg_type != expected_type {
                         errors.report((
                             inst,
@@ -1231,6 +1237,8 @@ impl<'a> Verifier<'a> {
                     }
                 }
                 ResolvedConstraint::Free(type_set) => {
+                    println!("   Free type_set: {type_set:?}");
+                    println!("   Free arg_type: {arg_type:?}");
                     if !type_set.contains(arg_type) {
                         errors.report((
                             inst,
@@ -1275,10 +1283,12 @@ impl<'a> Verifier<'a> {
         match self.func.dfg.insts[inst].analyze_call(&self.func.dfg.value_lists) {
             CallInfo::Direct(func_ref, args) => {
                 let sig_ref = self.func.dfg.ext_funcs[func_ref].signature;
+                println!("   zz sig_ref: {sig_ref:?}");
                 let arg_types = self.func.dfg.signatures[sig_ref]
                     .params
                     .iter()
                     .map(|a| a.value_type);
+                println!("   zz arg_types: {arg_types:?}");
                 self.typecheck_variable_args_iterator(inst, arg_types, args, errors)?;
             }
             CallInfo::Indirect(sig_ref, args) => {
@@ -1286,6 +1296,8 @@ impl<'a> Verifier<'a> {
                     .params
                     .iter()
                     .map(|a| a.value_type);
+                println!("   x sig_ref: {sig_ref:?}");
+                println!("   x arg_types: {arg_types:?}");
                 self.typecheck_variable_args_iterator(inst, arg_types, args, errors)?;
             }
             CallInfo::NotACall => {}
